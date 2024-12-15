@@ -1,7 +1,7 @@
 import Navbar from '../components/Navbar';
 import TransactionForm from '../components/TransactionForm';
 
-export default function Home() {
+export default function Register() {
   return (
     <div>
       <Navbar />
