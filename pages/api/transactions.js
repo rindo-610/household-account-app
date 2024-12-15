@@ -6,6 +6,9 @@ export default async function handler(req, res) {
       const baseUrl = process.env.API_BASE_URL; 
       const apiKey = process.env.API_PUBLIC_KEY; 
       const apiSecret = process.env.API_SECRET_KEY;
+      console.log('baseUrl:', baseUrl);
+      console.log('apiKey:', apiKey);
+      console.log('apiSecret:', apiSecret);
 
       // 認証ヘッダー（Basic認証例）
       const credentials = btoa(`${apiKey}:${apiSecret}`);
@@ -15,14 +18,6 @@ export default async function handler(req, res) {
       };
 
       const { year, month, tag, condition } = req.query;
-
-      // // クエリストリングを構築
-      // let url = `${baseUrl}/transactions?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
-
-      // // tagが指定されている場合のみtagとconditionを付与
-      // if (tag) {
-      //   url += `&tag=${encodeURIComponent(tag)}&condition=${encodeURIComponent(condition)}`;
-      // }
 
       let url;
       if (tag && tag.trim() !== '') {
