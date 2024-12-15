@@ -6,9 +6,6 @@ export default async function handler(req, res) {
       const baseUrl = process.env.API_BASE_URL; 
       const apiKey = process.env.API_PUBLIC_KEY; 
       const apiSecret = process.env.API_SECRET_KEY;
-      console.log('baseUrl:', baseUrl);
-      console.log('apiKey:', apiKey);
-      console.log('apiSecret:', apiSecret);
 
       // 認証ヘッダー（Basic認証例）
       const credentials = btoa(`${apiKey}:${apiSecret}`);
