@@ -105,11 +105,11 @@ export default function Chart() {
 
   const pieOptions = {
     responsive: true,
-    maintainAspectRatio: true,
-    aspectRatio: 1,
+    maintainAspectRatio: false,
+    layout: { padding: 10 },
     plugins: {
       legend: {
-        display: false, // チャート内の凡例は非表示にする
+        display: false,
       },
       title: {
         display: false
@@ -122,13 +122,13 @@ export default function Chart() {
   };
 
   // 凡例用のカテゴリ一覧（重複を除く）
-  // 収入と支出両方のカテゴリを統合
-  const allCats = new Set(data.categories); // data.categoriesには同じカテゴリがあると仮定
-  // SetをArrayに戻す
+  const allCats = new Set(data.categories);
   const uniqueCategories = Array.from(allCats);
-
-  // 凡例用カラー割り当て（カテゴリ数に合わせてcolorsを参照）
   const legendColors = uniqueCategories.map((_, i) => colors[i % colors.length]);
+
+  // 合計収入・合計支出を計算
+  const totalIncome = data.income.reduce((acc, val) => acc + Number(val), 0);
+  const totalExpense = data.expense.reduce((acc, val) => acc + Number(val), 0);
 
   return (
     <div className="w-full flex flex-col items-center p-4 space-y-4">
@@ -211,37 +211,22 @@ export default function Chart() {
         </div>
         
         <div className="max-w-2xl w-full bg-white p-4 rounded-md shadow-md flex justify-around items-center" 
-          style={{ overflow: 'visible' }}> {/* overflowをvisibleに */}
-        <div className="flex flex-col items-center space-y-2" style={{ width: '45%' }}>
-          <h3 className="text-center text-sm font-medium mb-2">収入</h3>
-          <div className="relative" style={{ width: '100%', maxWidth: '200px', height: 'auto' }}>
-            <Pie data={incomeChartData} options={{
-              responsive: true,
-              maintainAspectRatio: false, // falseにする
-              layout: { padding: 10 }, // 余白を付ける
-              plugins: {
-                legend: { display: false },
-                title: { display: false },
-              }
-            }} />
+             style={{ overflow: 'visible' }}>
+          <div className="flex flex-col items-center space-y-2" style={{ width: '45%', overflow: 'hidden' }}>
+            <h3 className="text-center text-sm font-medium mb-2">収入</h3>
+            <p className="text-sm font-medium">{totalIncome.toLocaleString()}円</p> {/* 収入合計額表示 */}
+            <div className="relative" style={{ width: '100%', maxWidth: '200px', height: 'auto' }}>
+              <Pie data={incomeChartData} options={pieOptions} />
+            </div>
+          </div>
+          <div className="flex flex-col items-center space-y-2" style={{ width: '45%', overflow: 'hidden' }}>
+            <h3 className="text-center text-sm font-medium mb-2">支出</h3>
+            <p className="text-sm font-medium">{totalExpense.toLocaleString()}円</p> {/* 支出合計額表示 */}
+            <div className="relative" style={{ width: '100%', maxWidth: '200px', height: 'auto' }}>
+              <Pie data={expenseChartData} options={pieOptions} />
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-center space-y-2" style={{ width: '45%' }}>
-          <h3 className="text-center text-sm font-medium mb-2">支出</h3>
-          <div className="relative" style={{ width: '100%', maxWidth: '200px', height: 'auto' }}>
-            <Pie data={expenseChartData} options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              layout: { padding: 10 },
-              plugins: {
-                legend: { display: false },
-                title: { display: false },
-              }
-            }} />
-          </div>
-        </div>
-      </div>
-
       </div>
     </div>
   );
