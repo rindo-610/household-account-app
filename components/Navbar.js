@@ -14,6 +14,12 @@ export default function Navbar() {
               登録
             </Link>
             <Link
+              href="/list"
+              className="flex-1 mx-1 px-3 py-2 bg-blue-600 rounded text-center text-white hover:bg-blue-700 text-sm"
+            >
+              一覧
+            </Link>
+            <Link
               href="/analysis"
               className="flex-1 mx-1 px-3 py-2 bg-blue-600 rounded text-center text-white hover:bg-blue-700 text-sm"
             >

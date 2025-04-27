@@ -1,8 +1,8 @@
-import Navbar from '../components/Navbar';
-import TransactionForm from '../components/TransactionForm';
-import TransactionList from './list';
+// pages/list.js
+import Navbar from '../components/Navbar'
+import TransactionList from '../components/TransactionList'
 
-export default function Home() {
+export default function ListPage() {
   return (
     <div>
       <Navbar />
@@ -12,5 +12,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  )
 }
