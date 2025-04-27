@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(255)
+  createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(255)
+  createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  transactions Transaction[]
+
+  @@map("tags")
+}
+
+model Transaction {
+  id         Int             @id @default(autoincrement())
+  amount     Decimal         @db.Decimal(10, 2)
+  type       TransactionType
+  categoryId Int?            @map("category_id")
+  tagId      Int?            @map("tag_id")
+  memo       String?         @db.Text
+  date       DateTime        @db.Date
+  createdAt  DateTime?       @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt  DateTime?       @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  category   Category?       @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_1")
+  tag        Tag?            @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_2")
+
+  @@index([categoryId], map: "fk_1")
+  @@index([tagId], map: "fk_2")
+  @@map("transactions")
+}
+
+enum TransactionType {
+  EXPENSE @map("支出")
+  INCOME  @map("収入")
+}

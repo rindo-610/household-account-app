@@ -1,155 +1,129 @@
 // pages/api/transactions.js
 
+import prisma from '../../lib/prisma'
+import { Prisma } from '@prisma/client'
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    try {
-      const baseUrl = process.env.API_BASE_URL; 
-      const apiKey = process.env.API_PUBLIC_KEY; 
-      const apiSecret = process.env.API_SECRET_KEY;
-
-      // 認証ヘッダー（Basic認証例）
-      const credentials = btoa(`${apiKey}:${apiSecret}`);
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${credentials}`
-      };
-
-      const { year, month, tag, condition } = req.query;
-
-      let url;
-      if (tag && tag.trim() !== '') {
-        // tagがある場合はタグ用のエンドポイントを使用
-        url = `${baseUrl}/transactions?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&tag=${encodeURIComponent(tag)}&condition=${encodeURIComponent(condition)}`;
-      } else {
-        // tagがない場合はタグなし用のエンドポイントを使用
-        url = `${baseUrl}/transactions/no_tag?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
-      }
-
-      const transactionResponse = await fetch(url, {
-        method: 'GET',
-        headers
-      });
-
-      if (!transactionResponse.ok) {
-        throw new Error('Failed to fetch transaction data');
-      }
-
-      const transactionData = await transactionResponse.json();
-
-      const rows = transactionData.data && transactionData.data.rows ? transactionData.data.rows : [];
-      const categories = rows.map(r => r.category_name);
-      const income = rows.map(r => r.total_income || 0);
-      const expense = rows.map(r => r.total_expense || 0);
-
-      return res.status(200).json({ categories, income, expense });
-    } catch (error) {
-      console.error('Caught error:', error);
-      return res.status(500).json({ 
-        message: 'DB Error', 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+    const { year, month, tag, condition } = req.query
+    if (!year || !month) {
+      return res.status(400).json({ message: 'year, month を指定してください' })
     }
-  } else if (req.method === 'POST') {
-    const { amount, type, categoryName, tagName, memo, date } = req.body;
-    try {
-      const baseUrl = process.env.API_BASE_URL; 
-      const apiKey = process.env.API_PUBLIC_KEY; 
-      const apiSecret = process.env.API_SECRET_KEY;
-      
-      // 認証ヘッダー（Basic認証）
-      const credentials = btoa(`${apiKey}:${apiSecret}`);
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${credentials}`
-      };
 
-      // --- ここ以降は既存のPOST処理そのまま ---
-      // 1. カテゴリID取得または新規作成
-      let categoryId = null;
-      if (categoryName) {
-        let categoryResponse = await fetch(`${baseUrl}/categories?name=${encodeURIComponent(categoryName)}`, {
-          method: 'GET',
-          headers
-        });
-        let categoryData = await categoryResponse.json();
+    const y = Number(year)
+    const m = Number(month) - 1
+    const start = new Date(y, m, 1)
+    const end = new Date(y, m + 1, 0, 23, 59, 59)
 
-        if (categoryResponse.ok && categoryData && categoryData.data.rows.length > 0) {
-          categoryId = categoryData.data.rows[0].id;
-        } else {
-          let createCategoryRes = await fetch(`${baseUrl}/categories`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ name: categoryName })
-          });
-          if (!createCategoryRes.ok) throw new Error('Failed to create category');
-          let createdCategory = await createCategoryRes.json();
-          categoryId = createdCategory.data.rows[0].id;
-        }
-      }
-
-      // 2. タグID取得または新規作成
-      let tagId = null;
-      if (tagName && tagName.trim() !== '') {
-        let tagResponse = await fetch(`${baseUrl}/tags?name=${encodeURIComponent(tagName)}`, {
-          method: 'GET',
-          headers
-        });
-        let tagData = await tagResponse.json();
-
-        if (tagResponse.ok && tagData && tagData.data.rows.length > 0) {
-          tagId = tagData.data.rows[0].id;
-        } else {
-          let createTagRes = await fetch(`${baseUrl}/tags`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ name: tagName })
-          });
-          if (!createTagRes.ok) throw new Error('Failed to create tag');
-          let createdTag = await createTagRes.json();
-          tagId = createdTag.data.rows[0].id;
-        }
-      }
-
-      // 3. トランザクション登録
-      const transactionData = {
-        amount: amount ? parseFloat(amount) : 0,
-        type: type,
-        category_id: categoryId,
-        memo: memo || '',
-        date: date || new Date().toISOString().split('T')[0]
-      };
-
-      let transactionResponse;
-
-      if (tagId) {
-        transactionData.tag_id = tagId;
-        transactionResponse = await fetch(`${baseUrl}/transactions`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(transactionData)
-        });
-      } else {
-        transactionResponse = await fetch(`${baseUrl}/transactions/no_tag`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(transactionData)
-        });
-      }
-
-      if (!transactionResponse.ok) {
-        throw new Error('Failed to create transaction');
-      }
-
-      const newTransaction = await transactionResponse.json();
-      return res.status(200).json({ message: 'Success', data: newTransaction });
-    } catch (error) {
-      console.error('Caught error:', error);
-      return res.status(500).json({ 
-        message: 'DB Error', 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+    // 共通の where
+    const whereCommon = {
+      date: { gte: start, lte: end }
     }
-  } else {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+
+    if (tag && tag.trim() !== '') {
+      if (condition === 'only') {
+        whereCommon.tag = { name: String(tag) }
+      } else if (condition === 'exclude') {
+        whereCommon.OR = [
+          { tag: null },
+          { NOT: { tag: { name: String(tag) } } }
+        ]
+      }
+    }
+
+    try {
+      // 「収入」の集計
+      const incomes = await prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where: { ...whereCommon, type: 'INCOME' },
+        _sum: { amount: true }
+      })
+
+      // 「支出」の集計
+      const expenses = await prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where: { ...whereCommon, type: 'EXPENSE' },
+        _sum: { amount: true }
+      })
+
+      // 全カテゴリ取得
+      const cats = await prisma.category.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' }
+      })
+
+      const categories = cats.map((c) => c.name)
+      const income = cats.map((c) => {
+        const rec = incomes.find((i) => i.categoryId === c.id)?._sum.amount
+        return rec ? rec.toNumber() : 0
+      })
+      const expense = cats.map((c) => {
+        const rec = expenses.find((e) => e.categoryId === c.id)?._sum.amount
+        return rec ? rec.toNumber() : 0
+      })
+
+      return res.status(200).json({ categories, income, expense })
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error)
+      return res.status(500).json({
+        message: 'DB Error',
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
   }
+
+  if (req.method === 'POST') {
+    const { amount, type, categoryName, tagName, memo, date } = req.body
+    if (!amount || !type || !categoryName || !date) {
+      return res.status(400).json({ message: '必須フィールドが不足しています' })
+    }
+
+    try {
+      // カテゴリ取得 or 作成
+      let category = await prisma.category.findUnique({
+        where: { name: String(categoryName) }
+      })
+      if (!category) {
+        category = await prisma.category.create({
+          data: { name: String(categoryName) }
+        })
+      }
+
+      // タグ取得 or 作成
+      let tag = null
+      if (tagName && tagName.trim() !== '') {
+        tag = await prisma.tag.findUnique({
+          where: { name: String(tagName) }
+        })
+        if (!tag) {
+          tag = await prisma.tag.create({
+            data: { name: String(tagName) }
+          })
+        }
+      }
+
+      // トランザクション作成
+      const created = await prisma.transaction.create({
+        data: {
+          amount: new Prisma.Decimal(String(amount)),
+          type: type === 'income' ? 'INCOME' : 'EXPENSE',
+          categoryId: category.id,
+          tagId: tag?.id,
+          memo: memo ? String(memo) : null,
+          date: new Date(date)
+        }
+      })
+
+      return res.status(201).json(created)
+    } catch (error) {
+      console.error('Failed to create transaction:', error)
+      return res.status(500).json({
+        message: 'DB Error',
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
+
+  res.setHeader('Allow', ['GET', 'POST'])
+  return res.status(405).json({ message: 'Method Not Allowed' })
 }
