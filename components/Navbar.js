@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LoginButton from './LoginButton';
 
 export default function Navbar() {
   return (
@@ -26,6 +27,9 @@ export default function Navbar() {
               グラフ
             </Link>
           </div>
+        </div>
+        <div className="ml-auto">
+          <LoginButton />
         </div>
       </nav>
     </>
