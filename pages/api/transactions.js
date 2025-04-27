@@ -90,8 +90,8 @@ export default async function handler(req, res) {
 
     try {
       // カテゴリ取得 or 作成 (ユーザー固有)
-      let category = await prisma.category.findUnique({
-        where: { name_userId: { name: String(categoryName), userId } }
+      let category = await prisma.category.findFirst({
+        where: { name: String(categoryName), userId }
       })
       if (!category) {
         category = await prisma.category.create({
@@ -102,8 +102,8 @@ export default async function handler(req, res) {
       // タグ取得 or 作成 (ユーザー固有)
       let tag = null
       if (tagName && tagName.trim() !== '') {
-        tag = await prisma.tag.findUnique({
-          where: { name_userId: { name: String(tagName), userId } }
+        tag = await prisma.tag.findFirst({
+          where: { name: String(tagName), userId }
         })
         if (!tag) {
           tag = await prisma.tag.create({
