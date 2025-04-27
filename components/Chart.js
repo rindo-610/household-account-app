@@ -12,7 +12,15 @@ import {
 } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 export default function Chart() {
   const now = new Date();
@@ -32,7 +40,7 @@ export default function Chart() {
       try {
         const res = await fetch('/api/tags/all');
         if (!res.ok) throw new Error('タグ一覧の取得に失敗しました');
-        const tagList = await res.json();         // => [{ id, name }, ...]
+        const tagList = await res.json(); // => [{ id, name }, ...]
         setTags(tagList.map((t) => t.name));
       } catch (error) {
         console.error(error);
@@ -68,24 +76,25 @@ export default function Chart() {
   if (!data) return <div>Loading...</div>;
 
   // Chart.js 用の色割り当て
-const baseColors = [
-  'rgba(75,192,192,0.6)',   // teal
-  'rgba(255,99,132,0.6)',   // pink
-  'rgba(255,206,86,0.6)',   // yellow
-  'rgba(54,162,235,0.6)',   // blue
-  'rgba(153,102,255,0.6)',  // purple
-  'rgba(201,203,207,0.6)',  // grey
-  'rgba(255,159,64,0.6)',   // orange
-  'rgba(255,99,71,0.6)',    // tomato
-  'rgba(60,179,113,0.6)',   // mediumseagreen
-  'rgba(218,112,214,0.6)',  // orchid
-  'rgba(147,112,219,0.6)',  // mediumpurple
-  'rgba(0,191,255,0.6)',    // deepskyblue
-  'rgba(124,252,0,0.6)',    // lawngreen
-  'rgba(255,20,147,0.6)',   // deeppink
-];
-
+  const baseColors = [
+    'rgba(75,192,192,0.6)',   // teal
+    'rgba(255,99,132,0.6)',   // pink
+    'rgba(255,206,86,0.6)',   // yellow
+    'rgba(54,162,235,0.6)',   // blue
+    'rgba(153,102,255,0.6)',  // purple
+    'rgba(201,203,207,0.6)',  // grey
+    'rgba(255,159,64,0.6)',   // orange
+    'rgba(255,99,71,0.6)',    // tomato
+    'rgba(60,179,113,0.6)',   // mediumseagreen
+    'rgba(218,112,214,0.6)',  // orchid
+    'rgba(147,112,219,0.6)',  // mediumpurple
+    'rgba(0,191,255,0.6)',    // deepskyblue
+    'rgba(124,252,0,0.6)',    // lawngreen
+    'rgba(255,20,147,0.6)',   // deeppink
+  ];
   const assignColors = (arr) => arr.map((_, i) => baseColors[i % baseColors.length]);
+
+  // 円グラフ用データ
   const incomeChartData = {
     labels: data.categories,
     datasets: [{ data: data.income, backgroundColor: assignColors(data.categories) }],
@@ -104,9 +113,11 @@ const baseColors = [
     },
   };
 
-  // カスタム凡例用
-  const uniqueCats = Array.from(new Set(data.categories));
-  const legendColors = assignColors(uniqueCats);
+  // 該当月に実際に値があるカテゴリだけを抽出
+  const presentCategories = data.categories.filter((_, idx) =>
+    Number(data.income[idx] || 0) > 0 || Number(data.expense[idx] || 0) > 0
+  );
+  const legendColors = assignColors(presentCategories);
 
   const totalIncome  = data.income.reduce((sum, v) => sum + Number(v), 0);
   const totalExpense = data.expense.reduce((sum, v) => sum + Number(v), 0);
@@ -177,10 +188,10 @@ const baseColors = [
         </div>
       </div>
 
-      {/* カスタム凡例 */}
+      {/* カスタム凡例：該当月に存在するカテゴリのみ表示 */}
       <div className="max-w-2xl w-full bg-white p-4 rounded shadow space-y-2">
         <div className="flex justify-center space-x-4">
-          {uniqueCats.map((cat, i) => (
+          {presentCategories.map((cat, i) => (
             <div key={i} className="flex items-center space-x-1">
               <div
                 style={{
@@ -197,10 +208,15 @@ const baseColors = [
 
         {/* 円グラフ表示 */}
         <div className="flex justify-around items-center">
-          {[{ title: '収入', total: totalIncome, chartData: incomeChartData },
-            { title: '支出', total: totalExpense, chartData: expenseChartData }
+          {[
+            { title: '収入', total: totalIncome, chartData: incomeChartData },
+            { title: '支出', total: totalExpense, chartData: expenseChartData },
           ].map(({ title, total, chartData }) => (
-            <div key={title} className="flex flex-col items-center space-y-2" style={{ width: '45%' }}>
+            <div
+              key={title}
+              className="flex flex-col items-center space-y-2"
+              style={{ width: '45%' }}
+            >
               <h3 className="text-sm font-medium">{title}</h3>
               <p className="text-sm font-medium">{total.toLocaleString()}円</p>
               <div className="relative" style={{ width: '100%', maxWidth: 200, height: 200 }}>
