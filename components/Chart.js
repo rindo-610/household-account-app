@@ -68,14 +68,23 @@ export default function Chart() {
   if (!data) return <div>Loading...</div>;
 
   // Chart.js 用の色割り当て
-  const baseColors = [
-    'rgba(75,192,192,0.6)',
-    'rgba(255,99,132,0.6)',
-    'rgba(255,206,86,0.6)',
-    'rgba(54,162,235,0.6)',
-    'rgba(153,102,255,0.6)',
-    'rgba(201,203,207,0.6)',
-  ];
+const baseColors = [
+  'rgba(75,192,192,0.6)',   // teal
+  'rgba(255,99,132,0.6)',   // pink
+  'rgba(255,206,86,0.6)',   // yellow
+  'rgba(54,162,235,0.6)',   // blue
+  'rgba(153,102,255,0.6)',  // purple
+  'rgba(201,203,207,0.6)',  // grey
+  'rgba(255,159,64,0.6)',   // orange
+  'rgba(255,99,71,0.6)',    // tomato
+  'rgba(60,179,113,0.6)',   // mediumseagreen
+  'rgba(218,112,214,0.6)',  // orchid
+  'rgba(147,112,219,0.6)',  // mediumpurple
+  'rgba(0,191,255,0.6)',    // deepskyblue
+  'rgba(124,252,0,0.6)',    // lawngreen
+  'rgba(255,20,147,0.6)',   // deeppink
+];
+
   const assignColors = (arr) => arr.map((_, i) => baseColors[i % baseColors.length]);
   const incomeChartData = {
     labels: data.categories,
