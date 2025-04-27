@@ -20,7 +20,7 @@ model User {
 model Category {
   id           Int           @id @default(autoincrement())
   name         String        @db.VarChar(255)
-  userId       String?       @db.VarChar(191)
+  userId       String       @db.VarChar(191)
   user         User?         @relation(fields: [userId], references: [id])
   createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
@@ -32,7 +32,7 @@ model Category {
 model Tag {
   id           Int           @id @default(autoincrement())
   name         String        @db.VarChar(255)
-  userId       String?       @db.VarChar(191)
+  userId       String       @db.VarChar(191)
   user         User?          @relation(fields: [userId], references: [id])
   createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
@@ -45,7 +45,7 @@ model Transaction {
   id          Int             @id @default(autoincrement())
   amount      Decimal         @db.Decimal(10, 2)
   type        TransactionType
-  userId       String?       @db.VarChar(191)
+  userId      String       @db.VarChar(191)
   user        User?            @relation(fields: [userId], references: [id])
   categoryId  Int?            @map("category_id")
   tagId       Int?            @map("tag_id")

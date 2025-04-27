@@ -1,9 +1,17 @@
 // pages/api/transactions.js
-
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from './auth/[...nextauth]'
 import prisma from '../../lib/prisma'
 import { Prisma } from '@prisma/client'
 
 export default async function handler(req, res) {
+  // 認証チェック
+  const session = await getServerSession(req, res, authOptions)
+  if (!session) {
+    return res.status(401).json({ message: '認証が必要です' })
+  }
+  const userId = session.user.id
+
   if (req.method === 'GET') {
     const { year, month, tag, condition } = req.query
     if (!year || !month) {
@@ -15,8 +23,9 @@ export default async function handler(req, res) {
     const start = new Date(y, m, 1)
     const end = new Date(y, m + 1, 0, 23, 59, 59)
 
-    // 共通の where
+    // 共通の where に userId を追加
     const whereCommon = {
+      userId,
       date: { gte: start, lte: end }
     }
 
@@ -46,8 +55,9 @@ export default async function handler(req, res) {
         _sum: { amount: true }
       })
 
-      // 全カテゴリ取得
+      // ユーザーのカテゴリ取得
       const cats = await prisma.category.findMany({
+        where: { userId },
         select: { id: true, name: true },
         orderBy: { name: 'asc' }
       })
@@ -79,25 +89,25 @@ export default async function handler(req, res) {
     }
 
     try {
-      // カテゴリ取得 or 作成
+      // カテゴリ取得 or 作成 (ユーザー固有)
       let category = await prisma.category.findUnique({
-        where: { name: String(categoryName) }
+        where: { name_userId: { name: String(categoryName), userId } }
       })
       if (!category) {
         category = await prisma.category.create({
-          data: { name: String(categoryName) }
+          data: { name: String(categoryName), userId }
         })
       }
 
-      // タグ取得 or 作成
+      // タグ取得 or 作成 (ユーザー固有)
       let tag = null
       if (tagName && tagName.trim() !== '') {
         tag = await prisma.tag.findUnique({
-          where: { name: String(tagName) }
+          where: { name_userId: { name: String(tagName), userId } }
         })
         if (!tag) {
           tag = await prisma.tag.create({
-            data: { name: String(tagName) }
+            data: { name: String(tagName), userId }
           })
         }
       }
@@ -110,7 +120,8 @@ export default async function handler(req, res) {
           categoryId: category.id,
           tagId: tag?.id,
           memo: memo ? String(memo) : null,
-          date: new Date(date)
+          date: new Date(date),
+          userId // userId を追加
         }
       })
 
