@@ -16,8 +16,8 @@ export default function LoginButton() {
     )
   }
   return (
-    <button onClick={() => signIn('github')} className="text-sm text-white bg-green-500 px-2 py-1 rounded">
-      GitHubでログイン
+    <button onClick={() => signIn('google')} className="text-sm text-white bg-green-500 px-2 py-1 rounded">
+      Googleでログイン
     </button>
   )
 }

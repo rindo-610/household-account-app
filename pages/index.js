@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import TransactionForm from '../components/TransactionForm';
+import DebugSession from '../components/DebugSession';
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from './api/auth/[...nextauth]'
 
@@ -20,6 +21,7 @@ export default function Home() {
   return (
     <div>
       <Navbar />
+      <DebugSession />
       <div className="flex justify-center bg-gray-100 py-4">
         <div className="p-6 bg-white rounded-md shadow-md">
           <TransactionForm />

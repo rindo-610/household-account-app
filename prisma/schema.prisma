@@ -7,9 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// NextAuth.js 用の User モデルを追加
+model User {
+  id            String        @id @default(cuid()) @db.VarChar(191)
+  name          String?       
+  email         String?       @unique
+  categories    Category[]
+  tags          Tag[]
+  transactions  Transaction[]
+}
+
 model Category {
   id           Int           @id @default(autoincrement())
   name         String        @db.VarChar(255)
+  userId       String?       @db.VarChar(191)
+  user         User?         @relation(fields: [userId], references: [id])
   createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
   transactions Transaction[]
@@ -20,6 +32,8 @@ model Category {
 model Tag {
   id           Int           @id @default(autoincrement())
   name         String        @db.VarChar(255)
+  userId       String?       @db.VarChar(191)
+  user         User?          @relation(fields: [userId], references: [id])
   createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
   transactions Transaction[]
@@ -28,20 +42,23 @@ model Tag {
 }
 
 model Transaction {
-  id         Int             @id @default(autoincrement())
-  amount     Decimal         @db.Decimal(10, 2)
-  type       TransactionType
-  categoryId Int?            @map("category_id")
-  tagId      Int?            @map("tag_id")
-  memo       String?         @db.Text
-  date       DateTime        @db.Date
-  createdAt  DateTime?       @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt  DateTime?       @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
-  category   Category?       @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_1")
-  tag        Tag?            @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_2")
+  id          Int             @id @default(autoincrement())
+  amount      Decimal         @db.Decimal(10, 2)
+  type        TransactionType
+  userId       String?       @db.VarChar(191)
+  user        User?            @relation(fields: [userId], references: [id])
+  categoryId  Int?            @map("category_id")
+  tagId       Int?            @map("tag_id")
+  memo        String?         @db.Text
+  date        DateTime        @db.Date
+  createdAt   DateTime?       @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime?       @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_1")
+  tag         Tag?            @relation(fields: [tagId],      references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_2")
 
   @@index([categoryId], map: "fk_1")
-  @@index([tagId], map: "fk_2")
+  @@index([tagId],      map: "fk_2")
   @@map("transactions")
 }
 
